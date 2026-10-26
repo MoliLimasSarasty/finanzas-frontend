@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import Field from './Field'
 import FormButtons from './FormButtons'
-
-const inputClass = 'w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none'
+import { inputClass } from './styles'
 
 const empty = { name: '', balance: '', annualRate: '', minPayment: '' }
 

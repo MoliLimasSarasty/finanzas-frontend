@@ -22,6 +22,21 @@ export const mockSummary = {
   ],
 }
 
+export const mockCategories = [
+  { id: 1, name: 'Salario', type: 'INCOME' },
+  { id: 2, name: 'Freelance', type: 'INCOME' },
+  { id: 3, name: 'Inversiones', type: 'INCOME' },
+  { id: 4, name: 'Otros ingresos', type: 'INCOME' },
+  { id: 5, name: 'Vivienda', type: 'EXPENSE' },
+  { id: 6, name: 'Alimentación', type: 'EXPENSE' },
+  { id: 7, name: 'Transporte', type: 'EXPENSE' },
+  { id: 8, name: 'Servicios', type: 'EXPENSE' },
+  { id: 9, name: 'Salud', type: 'EXPENSE' },
+  { id: 10, name: 'Educación', type: 'EXPENSE' },
+  { id: 11, name: 'Ocio', type: 'EXPENSE' },
+  { id: 12, name: 'Otros', type: 'EXPENSE' },
+]
+
 export const mockTransactions = [
   { id: 1, date: '2026-10-01', description: 'Salario', category: 'Salario', type: 'INCOME', amount: 4500000 },
   { id: 2, date: '2026-10-02', description: 'Arriendo', category: 'Vivienda', type: 'EXPENSE', amount: 1200000 },

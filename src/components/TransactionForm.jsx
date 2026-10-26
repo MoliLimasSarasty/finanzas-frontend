@@ -1,9 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Field from './Field'
 import FormButtons from './FormButtons'
-import { CATEGORIES } from '../data/categories'
-
-const inputClass = 'w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none'
+import { inputClass } from './styles'
+import { getCategories } from '../api/services'
 
 // Fecha de hoy en formato AAAA-MM-DD (hora local, no UTC).
 const today = () => new Date().toLocaleDateString('en-CA')
@@ -16,6 +15,12 @@ export default function TransactionForm({ initial, onSubmit, onCancel }) {
   const [form, setForm] = useState(initial ?? empty)
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
+  const [categories, setCategories] = useState([])
+
+  // Las categorías se gestionan en la página "Categorías"; aquí solo se leen.
+  useEffect(() => {
+    getCategories().then(setCategories)
+  }, [])
 
   // Un solo manejador para todos los campos: usa el atributo "name" del input.
   const change = (e) => setForm({ ...form, [e.target.name]: e.target.value })
@@ -76,9 +81,11 @@ export default function TransactionForm({ initial, onSubmit, onCancel }) {
       <Field label="Categoría" error={errors.category}>
         <select name="category" value={form.category} onChange={change} className={inputClass}>
           <option value="">Selecciona…</option>
-          {CATEGORIES[form.type].map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
+          {categories
+            .filter((c) => c.type === form.type)
+            .map((c) => (
+              <option key={c.id} value={c.name}>{c.name}</option>
+            ))}
         </select>
       </Field>
 
