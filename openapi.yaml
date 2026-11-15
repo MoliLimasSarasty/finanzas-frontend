@@ -1,0 +1,672 @@
+openapi: 3.0.3
+info:
+  title: FinanzIA API
+  version: 1.0.0
+  description: |
+    Contrato entre el frontend (React) y el backend (Spring Boot) de FinanzIA.
+
+    Convenciones:
+    - Todas las rutas cuelgan de `/api`. En desarrollo, Vite redirige `/api` a http://localhost:8080.
+    - Todas las rutas, excepto `/auth/*`, exigen `Authorization: Bearer <token>` (JWT).
+      Cada usuario solo ve y modifica sus propios datos.
+    - Fechas `AAAA-MM-DD`, meses `AAAA-MM`, dinero en COP como entero, tasas como decimal entre 0 y 1.
+    - Todo error devuelve el esquema `Error`, con `message` en español y listo para mostrar al usuario.
+    - Mientras se decide si usar `categoryId`, los movimientos y presupuestos se relacionan con la categoría por su nombre.
+
+servers:
+  - url: /api
+    description: Mismo origen que el frontend (proxy de Vite en desarrollo)
+  - url: http://localhost:8080/api
+    description: Backend local directo
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Autenticación
+  - name: Dashboard
+  - name: Movimientos
+  - name: Categorías
+  - name: Presupuestos
+  - name: Deudas
+  - name: Asistente IA
+
+paths:
+  /auth/login:
+    post:
+      tags: [Autenticación]
+      summary: Iniciar sesión
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Sesión iniciada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401':
+          description: Correo o contraseña incorrectos
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { message: Correo o contraseña incorrectos }
+
+  /auth/register:
+    post:
+      tags: [Autenticación]
+      summary: Crear cuenta (propuesto)
+      description: Crea el usuario y sus 12 categorías por defecto, y devuelve la sesión iniciada.
+      operationId: register
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: Cuenta creada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409':
+          description: El correo ya está registrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { message: Ya existe una cuenta con ese correo }
+
+  /dashboard/summary:
+    get:
+      tags: [Dashboard]
+      summary: Resumen financiero de un mes
+      operationId: getSummary
+      parameters:
+        - name: month
+          in: query
+          required: false
+          description: Mes a resumir. Si no se envía, se usa el mes actual.
+          schema: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$', example: '2026-11' }
+      responses:
+        '200':
+          description: Resumen del mes
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Summary' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /transactions:
+    get:
+      tags: [Movimientos]
+      summary: Listar movimientos
+      description: El orden no importa; el frontend ordena por fecha.
+      operationId: getTransactions
+      responses:
+        '200':
+          description: Lista de movimientos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Transaction' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Movimientos]
+      summary: Crear movimiento
+      operationId: createTransaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TransactionInput' }
+      responses:
+        '201':
+          description: Movimiento creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Transaction' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /transactions/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [Movimientos]
+      summary: Actualizar movimiento
+      operationId: updateTransaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TransactionInput' }
+      responses:
+        '200':
+          description: Movimiento actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Transaction' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Movimientos]
+      summary: Eliminar movimiento
+      operationId: deleteTransaction
+      responses:
+        '204': { description: Movimiento eliminado }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /categories:
+    get:
+      tags: [Categorías]
+      summary: Listar categorías
+      operationId: getCategories
+      responses:
+        '200':
+          description: Lista de categorías
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Category' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Categorías]
+      summary: Crear categoría
+      operationId: createCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CategoryInput' }
+      responses:
+        '201':
+          description: Categoría creada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Category' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: Ya existe una categoría de ese tipo con ese nombre (sin distinguir mayúsculas)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example:
+                message: Ya existe una categoría con ese nombre
+                errors: { name: Ya existe una categoría con ese nombre }
+
+  /categories/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [Categorías]
+      summary: Actualizar (renombrar) categoría
+      description: |
+        El `type` no se puede cambiar (si llega distinto, responde 400).
+        Al renombrar, los movimientos y el presupuesto de la categoría pasan al nombre nuevo.
+      operationId: updateCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CategoryInput' }
+      responses:
+        '200':
+          description: Categoría actualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Category' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Ya existe otra categoría de ese tipo con ese nombre
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    delete:
+      tags: [Categorías]
+      summary: Eliminar categoría
+      description: Si la categoría tiene presupuesto, este se elimina con ella.
+      operationId: deleteCategory
+      responses:
+        '204': { description: Categoría eliminada }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: La categoría tiene movimientos y no se puede eliminar
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { message: La categoría tiene movimientos }
+
+  /budgets:
+    get:
+      tags: [Presupuestos]
+      summary: Listar presupuestos
+      operationId: getBudgets
+      responses:
+        '200':
+          description: Lista de presupuestos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Budget' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Presupuestos]
+      summary: Crear presupuesto
+      operationId: createBudget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BudgetInput' }
+      responses:
+        '201':
+          description: Presupuesto creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Budget' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: Esa categoría ya tiene presupuesto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { message: Esa categoría ya tiene presupuesto }
+
+  /budgets/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [Presupuestos]
+      summary: Actualizar presupuesto
+      description: Solo se actualiza `amount`; la categoría no cambia.
+      operationId: updateBudget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BudgetInput' }
+      responses:
+        '200':
+          description: Presupuesto actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Budget' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Presupuestos]
+      summary: Eliminar presupuesto
+      operationId: deleteBudget
+      responses:
+        '204': { description: Presupuesto eliminado }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /debts:
+    get:
+      tags: [Deudas]
+      summary: Listar deudas
+      operationId: getDebts
+      responses:
+        '200':
+          description: Lista de deudas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Debt' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Deudas]
+      summary: Crear deuda
+      operationId: createDebt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DebtInput' }
+      responses:
+        '201':
+          description: Deuda creada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Debt' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /debts/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    put:
+      tags: [Deudas]
+      summary: Actualizar deuda
+      operationId: updateDebt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DebtInput' }
+      responses:
+        '200':
+          description: Deuda actualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Debt' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Deudas]
+      summary: Eliminar deuda
+      operationId: deleteDebt
+      responses:
+        '204': { description: Deuda eliminada }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /assistant/chat:
+    post:
+      tags: [Asistente IA]
+      summary: Enviar un mensaje al asistente financiero (propuesto)
+      description: |
+        El backend llama al modelo de IA (la clave nunca llega al frontend) y agrega por su cuenta
+        el contexto financiero del usuario: resumen del mes, deudas y presupuestos.
+      operationId: chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChatRequest' }
+      responses:
+        '200':
+          description: Respuesta del asistente
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChatResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '503':
+          description: El servicio de IA no está disponible
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { message: El asistente no está disponible en este momento. Intenta más tarde. }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, format: int64, minimum: 1 }
+
+  responses:
+    BadRequest:
+      description: Datos inválidos
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            message: Revisa los datos del formulario
+            errors: { amount: El monto debe ser mayor que 0 }
+    Unauthorized:
+      description: Token ausente, vencido o inválido. El frontend cierra la sesión y redirige a /login.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { message: Tu sesión expiró. Inicia sesión de nuevo. }
+    NotFound:
+      description: El recurso no existe o pertenece a otro usuario
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example: { message: No encontramos el registro }
+
+  schemas:
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          description: Mensaje en español para mostrar al usuario
+        errors:
+          type: object
+          description: Error de cada campo inválido (nombre del campo → mensaje)
+          additionalProperties: { type: string }
+
+    TransactionType:
+      type: string
+      enum: [INCOME, EXPENSE]
+
+    Money:
+      type: integer
+      format: int64
+      description: Pesos colombianos (COP), entero sin decimales
+      example: 4500000
+
+    # ---------- Autenticación ----------
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, example: ana@correo.com }
+        password: { type: string, format: password, example: secreto123 }
+
+    RegisterRequest:
+      type: object
+      required: [name, email, password]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60, example: Ana }
+        email: { type: string, format: email, example: ana@correo.com }
+        password: { type: string, format: password, minLength: 8, example: secreto123 }
+
+    AuthResponse:
+      type: object
+      required: [token, name]
+      properties:
+        token: { type: string, description: JWT, example: eyJhbGciOiJIUzI1NiJ9... }
+        name: { type: string, description: Nombre que se muestra en el menú, example: Ana }
+
+    # ---------- Dashboard ----------
+    Summary:
+      type: object
+      required: [month, income, expenses, totalDebt, savingsRate, monthly, byCategory]
+      properties:
+        month: { type: string, example: '2026-11' }
+        income:
+          allOf: [{ $ref: '#/components/schemas/Money' }]
+          description: Suma de movimientos INCOME del mes
+        expenses:
+          allOf: [{ $ref: '#/components/schemas/Money' }]
+          description: Suma de movimientos EXPENSE del mes
+        totalDebt:
+          allOf: [{ $ref: '#/components/schemas/Money' }]
+          description: Suma del balance de todas las deudas
+        savingsRate:
+          type: number
+          format: double
+          description: (income - expenses) / income; 0 si income es 0. Puede ser negativa.
+          example: 0.49
+        monthly:
+          type: array
+          description: Los 6 meses que terminan en `month`, del más antiguo al más reciente; meses sin datos van con 0
+          minItems: 6
+          maxItems: 6
+          items: { $ref: '#/components/schemas/MonthlyPoint' }
+        byCategory:
+          type: array
+          description: Gastos del mes por categoría, de mayor a menor; solo categorías con gasto > 0
+          items: { $ref: '#/components/schemas/CategoryAmount' }
+
+    MonthlyPoint:
+      type: object
+      description: Las claves `ingresos` y `gastos` van en español porque el gráfico las usa como leyenda.
+      required: [month, ingresos, gastos]
+      properties:
+        month: { type: string, example: '2026-11' }
+        ingresos: { $ref: '#/components/schemas/Money' }
+        gastos: { $ref: '#/components/schemas/Money' }
+
+    CategoryAmount:
+      type: object
+      required: [name, value]
+      properties:
+        name: { type: string, example: Vivienda }
+        value: { $ref: '#/components/schemas/Money' }
+
+    # ---------- Movimientos ----------
+    TransactionInput:
+      type: object
+      required: [date, description, category, type, amount]
+      properties:
+        date: { type: string, format: date, example: '2026-11-06' }
+        description: { type: string, minLength: 1, maxLength: 100, example: Mercado }
+        category:
+          type: string
+          description: Nombre de una categoría del usuario con el mismo `type`
+          example: Alimentación
+        type: { $ref: '#/components/schemas/TransactionType' }
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: COP, siempre positivo; el signo lo da `type`
+          example: 760000
+
+    Transaction:
+      allOf:
+        - type: object
+          required: [id]
+          properties:
+            id: { type: integer, format: int64, example: 8 }
+        - $ref: '#/components/schemas/TransactionInput'
+
+    # ---------- Categorías ----------
+    CategoryInput:
+      type: object
+      required: [name, type]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 30, example: Alimentación }
+        type: { $ref: '#/components/schemas/TransactionType' }
+
+    Category:
+      allOf:
+        - type: object
+          required: [id]
+          properties:
+            id: { type: integer, format: int64, example: 6 }
+        - $ref: '#/components/schemas/CategoryInput'
+
+    # ---------- Presupuestos ----------
+    BudgetInput:
+      type: object
+      required: [category, amount]
+      properties:
+        category:
+          type: string
+          description: Nombre de una categoría EXPENSE del usuario
+          example: Alimentación
+        amount:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Límite mensual en COP
+          example: 900000
+
+    Budget:
+      allOf:
+        - type: object
+          required: [id]
+          properties:
+            id: { type: integer, format: int64, example: 1 }
+        - $ref: '#/components/schemas/BudgetInput'
+
+    # ---------- Deudas ----------
+    DebtInput:
+      type: object
+      required: [name, balance, annualRate, minPayment]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60, example: Tarjeta de crédito }
+        balance:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Saldo pendiente en COP
+          example: 3200000
+        annualRate:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: Tasa de interés anual como decimal (0.28 = 28 %)
+          example: 0.28
+        minPayment:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Pago mínimo mensual en COP
+          example: 250000
+
+    Debt:
+      allOf:
+        - type: object
+          required: [id]
+          properties:
+            id: { type: integer, format: int64, example: 1 }
+        - $ref: '#/components/schemas/DebtInput'
+
+    # ---------- Asistente IA ----------
+    ChatMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role: { type: string, enum: [user, assistant] }
+        content: { type: string, example: Hola }
+
+    ChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: ¿En qué estoy gastando de más este mes?
+        history:
+          type: array
+          description: Mensajes anteriores en orden (máximo los últimos 20). Puede ir vacío.
+          maxItems: 20
+          items: { $ref: '#/components/schemas/ChatMessage' }
+
+    ChatResponse:
+      type: object
+      required: [reply]
+      properties:
+        reply:
+          type: string
+          example: Este mes Ocio va en 240.000, 40.000 por encima de tu presupuesto.
