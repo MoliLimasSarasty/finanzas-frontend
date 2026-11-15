@@ -29,7 +29,7 @@ export default function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <form onSubmit={handleSubmit} className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-md">
-        <h1 className="mb-1 text-2xl font-bold text-emerald-700">FinanzIA</h1>
+        <h1 className="mb-1 text-2xl font-bold text-emerald-700">SmartKash</h1>
         <p className="mb-6 text-sm text-slate-500">Inicia sesión para ver tus finanzas</p>
 
         <label className="mb-1 block text-sm font-medium">Correo</label>

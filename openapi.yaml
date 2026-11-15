@@ -1,9 +1,9 @@
 openapi: 3.0.3
 info:
-  title: FinanzIA API
+  title: SmartKash API
   version: 1.0.0
   description: |
-    Contrato entre el frontend (React) y el backend (Spring Boot) de FinanzIA.
+    Contrato entre el frontend (React) y el backend (Spring Boot) de SmartKash.
 
     Convenciones:
     - Todas las rutas cuelgan de `/api`. En desarrollo, Vite redirige `/api` a http://localhost:8080.

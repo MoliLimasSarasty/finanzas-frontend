@@ -21,14 +21,14 @@ export default function Layout() {
     <div className="min-h-screen md:flex">
       {/* Barra superior solo en móvil */}
       <header className="flex items-center justify-between bg-emerald-700 p-4 text-white md:hidden">
-        <span className="font-bold">FinanzIA</span>
+        <span className="font-bold">SmartKash</span>
         <button onClick={() => setMenuOpen(!menuOpen)} aria-label="Abrir menú">☰</button>
       </header>
 
       <aside
         className={`${menuOpen ? 'block' : 'hidden'} w-full bg-emerald-800 p-4 text-emerald-50 md:block md:w-60 md:shrink-0`}
       >
-        <h1 className="mb-6 hidden text-xl font-bold md:block">FinanzIA</h1>
+        <h1 className="mb-6 hidden text-xl font-bold md:block">SmartKash</h1>
         <nav className="flex flex-col gap-1">
           {links.map((link) => (
             <NavLink
