@@ -1,5 +1,5 @@
 import client from './client'
-import { mockSummary, mockTransactions, mockDebts, mockCategories } from '../data/mock'
+import { mockSummary, mockTransactions, mockDebts, mockCategories, mockBudgets } from '../data/mock'
 
 // Mientras el backend no esté listo, USE_MOCK = true devuelve datos de prueba.
 // Cuando tu compañero tenga los endpoints, cámbialo a false.
@@ -11,6 +11,7 @@ const fake = (data) => new Promise((resolve) => setTimeout(() => resolve(data), 
 let transactions = [...mockTransactions]
 let debts = [...mockDebts]
 let categories = [...mockCategories]
+let budgets = [...mockBudgets]
 
 export async function login(email, password) {
   if (USE_MOCK) return fake({ token: 'token-de-prueba', name: email.split('@')[0] })
@@ -87,6 +88,10 @@ export async function updateCategory(id, category) {
     transactions = transactions.map((t) =>
       t.type === old.type && t.category === old.name ? { ...t, category: updated.name } : t,
     )
+    // Y el presupuesto de esa categoría (solo existen para gastos).
+    if (old.type === 'EXPENSE') {
+      budgets = budgets.map((b) => (b.category === old.name ? { ...b, category: updated.name } : b))
+    }
     return fake(updated)
   }
   const { data } = await client.put(`/categories/${id}`, category)
@@ -95,7 +100,10 @@ export async function updateCategory(id, category) {
 
 export async function deleteCategory(id) {
   if (USE_MOCK) {
+    const old = categories.find((c) => c.id === id)
     categories = categories.filter((c) => c.id !== id)
+    // Si la categoría tenía presupuesto, también se elimina.
+    if (old?.type === 'EXPENSE') budgets = budgets.filter((b) => b.category !== old.name)
     return fake(null)
   }
   await client.delete(`/categories/${id}`)
@@ -135,4 +143,40 @@ export async function deleteDebt(id) {
     return fake(null)
   }
   await client.delete(`/debts/${id}`)
+}
+
+// ---------- Presupuestos ----------
+
+export async function getBudgets() {
+  if (USE_MOCK) return fake(budgets)
+  const { data } = await client.get('/budgets')
+  return data
+}
+
+export async function createBudget(budget) {
+  if (USE_MOCK) {
+    const created = { ...budget, id: Date.now() }
+    budgets = [...budgets, created]
+    return fake(created)
+  }
+  const { data } = await client.post('/budgets', budget)
+  return data
+}
+
+export async function updateBudget(id, budget) {
+  if (USE_MOCK) {
+    const updated = { ...budget, id }
+    budgets = budgets.map((b) => (b.id === id ? updated : b))
+    return fake(updated)
+  }
+  const { data } = await client.put(`/budgets/${id}`, budget)
+  return data
+}
+
+export async function deleteBudget(id) {
+  if (USE_MOCK) {
+    budgets = budgets.filter((b) => b.id !== id)
+    return fake(null)
+  }
+  await client.delete(`/budgets/${id}`)
 }

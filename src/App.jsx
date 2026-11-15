@@ -8,6 +8,7 @@ import Transactions from './pages/Transactions'
 import Debts from './pages/Debts'
 import Simulator from './pages/Simulator'
 import Categories from './pages/Categories'
+import Budgets from './pages/Budgets'
 import ComingSoon from './pages/ComingSoon'
 
 // Mapa de rutas: qué página se muestra en cada URL.
@@ -24,7 +25,7 @@ export default function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/movimientos" element={<Transactions />} />
               <Route path="/categorias" element={<Categories />} />
-              <Route path="/presupuestos" element={<ComingSoon title="Presupuestos" />} />
+              <Route path="/presupuestos" element={<Budgets />} />
               <Route path="/deudas" element={<Debts />} />
               <Route path="/simulador" element={<Simulator />} />
               <Route path="/asistente" element={<ComingSoon title="Asistente financiero IA" />} />

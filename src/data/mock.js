@@ -43,10 +43,23 @@ export const mockTransactions = [
   { id: 3, date: '2026-10-05', description: 'Mercado', category: 'Alimentación', type: 'EXPENSE', amount: 380000 },
   { id: 4, date: '2026-10-08', description: 'Gasolina', category: 'Transporte', type: 'EXPENSE', amount: 150000 },
   { id: 5, date: '2026-10-12', description: 'Cine', category: 'Ocio', type: 'EXPENSE', amount: 60000 },
+  { id: 6, date: '2026-11-01', description: 'Salario', category: 'Salario', type: 'INCOME', amount: 4500000 },
+  { id: 7, date: '2026-11-02', description: 'Arriendo', category: 'Vivienda', type: 'EXPENSE', amount: 1200000 },
+  { id: 8, date: '2026-11-06', description: 'Mercado', category: 'Alimentación', type: 'EXPENSE', amount: 760000 },
+  { id: 9, date: '2026-11-09', description: 'Concierto', category: 'Ocio', type: 'EXPENSE', amount: 240000 },
+  { id: 10, date: '2026-11-10', description: 'Farmacia', category: 'Salud', type: 'EXPENSE', amount: 85000 },
 ]
 
 export const mockDebts = [
   { id: 1, name: 'Tarjeta de crédito', balance: 3200000, annualRate: 0.28, minPayment: 250000 },
   { id: 2, name: 'Crédito de libre inversión', balance: 8500000, annualRate: 0.19, minPayment: 420000 },
   { id: 3, name: 'Crédito vehículo', balance: 7000000, annualRate: 0.14, minPayment: 380000 },
+]
+
+// Límite mensual de gasto por categoría.
+export const mockBudgets = [
+  { id: 1, category: 'Alimentación', amount: 900000 },
+  { id: 2, category: 'Transporte', amount: 300000 },
+  { id: 3, category: 'Ocio', amount: 200000 },
+  { id: 4, category: 'Vivienda', amount: 1200000 },
 ]
